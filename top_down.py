@@ -21,31 +21,27 @@ class Query:
         self.amount = amount
 
 def is_intersected(a_start, a_end, b_start, b_end):
-    return False if b_start > a_end or a_start > b_end else True
+    return not (b_start > a_end or a_start > b_end)
 
 def top_down(orders , tanks):
     sorted_orders = sorted(orders, key =  lambda order : order.start, reverse=True)
-    #print( [(x.cheve, x.start, x.end) for x in sorted_orders] )
 
     for order in sorted_orders:
-        i = 1
+        
         while order.amount != 0:
-            i +=1
 
             try:
-                feasible_tanks = [tank for tank in tanks if tank.beer == order.beer and tank.capacity != 0 and not is_intersected(tank.start, tank.end, order.start, order.end)]
+                feasible_tanks = [tank for tank in tanks if tank.beer == order.beer and tank.capacity > 0 and not is_intersected(tank.start, tank.end, order.start, order.end)]
                 best = tanks.index( min( feasible_tanks, key = lambda tank : tank.capacity ) )
-                print(feasible_tanks)
+                #print([f.name for f in feasible_tanks] )
             except ValueError:
                 pass
 
             try:
-                feasible_tanks = [tank for tank in tanks if tank.beer == None and not is_intersected( tank.start, tank.end, order.start, order.end) ]
+                feasible_tanks = [tank for tank in tanks if tank.beer == None and not is_intersected(tank.start, tank.end, order.start, order.end) ]
                 best = tanks.index( min( feasible_tanks, key = lambda tank : abs(tank.start - order.start) ) )
             except ValueError:
                 raise Exception("There is no solution to the problem")
-            
-            print(tanks[best].start, tanks[best].end)# in feasible_tanks)
             
             tanks[best].beer = order.beer
             tanks[best].end = order.end
@@ -55,7 +51,7 @@ def top_down(orders , tanks):
             tanks[best].capacity = tanks[best].capacity - surplus_beer
             order.amount = order.amount - surplus_beer
 
-            print(tanks[best].name, "with", str(surplus_beer)+"/"+str(order.amount+surplus_beer), "of beer", order.beer, "occupied at for", tanks[best].start, "to", tanks[best].end)
+            print(tanks[best].name, "with", str(surplus_beer)+"/"+str(order.amount+surplus_beer), "of beer", order.beer, "occupied from", tanks[best].start, "to", tanks[best].end)
             
             # Re-inicializing parameters in case this tank is full
             if tanks[best].capacity == 0:
@@ -74,20 +70,10 @@ if __name__ == "__main__":
             query = file.readline().split(' ')
             query = Query( query[0], int(query[1]), int(query[2]) , int(query[3]))
             queries.append(query)
-            print(query.beer, query.start, query.end, query.amount)
 
         for i in range(n_tanks):
             name, capacity = file.readline().split(' ')
             tank = Tank(name, int(capacity), 30)
             tanks.append(tank)
-            print(tank.name, tank.capacity, tank.beer, tank.start, tank.end)
-
-
-    print(is_intersected(-float("inf"), -float("inf"), 1, 2) )
-    #for query1 in queries:
-    #    for query2 in queries:
-    #        print( (query1.start, query1.end), (query2.start, query2.end))
-    #        print(is_intersected(query1.start, query1.end, query2.start, query2.end) )
 
     top_down(queries, tanks)
-    #top_down(queries, tanks)
