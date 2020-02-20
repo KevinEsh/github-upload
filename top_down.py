@@ -31,25 +31,24 @@ def top_down(orders , tanks):
         while order.amount != 0:
 
             try:
-                feasible_tanks = [tank for tank in tanks if tank.beer == order.beer and tank.capacity > 0 and not is_intersected(tank.start, tank.end, order.start, order.end)]
+                feasible_tanks = [tank for tank in tanks if tank.beer == order.beer and tank.capacity > 0] #and not is_intersected(tank.start, tank.end, order.start, order.end)]
                 best = tanks.index( min( feasible_tanks, key = lambda tank : tank.capacity ) )
                 #print([f.name for f in feasible_tanks] )
             except ValueError:
-                pass
 
-            try:
-                feasible_tanks = [tank for tank in tanks if tank.beer == None and not is_intersected(tank.start, tank.end, order.start, order.end) ]
-                best = tanks.index( min( feasible_tanks, key = lambda tank : abs(tank.start - order.start) ) )
-            except ValueError:
-                raise Exception("There is no solution to the problem")
+                try:
+                    feasible_tanks = [tank for tank in tanks if tank.beer == None and not is_intersected(tank.start, tank.end, order.start, order.end) ]
+                    best = tanks.index( min( feasible_tanks, key = lambda tank : abs(tank.start - order.start) ) )
+                except ValueError:
+                    raise Exception("There is no solution to the problem")
             
             tanks[best].beer = order.beer
             tanks[best].end = order.end
             tanks[best].start = order.start - tanks[best].lazy
             
             surplus_beer = min(tanks[best].capacity, order.amount)
-            tanks[best].capacity = tanks[best].capacity - surplus_beer
-            order.amount = order.amount - surplus_beer
+            tanks[best].capacity -= surplus_beer
+            order.amount -= surplus_beer
 
             print(tanks[best].name, "with", str(surplus_beer)+"/"+str(order.amount+surplus_beer), "of beer", order.beer, "occupied from", tanks[best].start, "to", tanks[best].end)
             
