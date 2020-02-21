@@ -37,9 +37,7 @@ def any_is_intersected(intervals, start, end, lazy):
 def top_down(orders , tanks):
     #sorted_orders = sorted(orders, key = lambda order : (order.beer, order.start, order.end), reverse=True)
     n_tanks = set()
-    #print(beers, sorted_orders)
-
-    file = open("me.csv", 'w')
+    file = open("gov.csv", 'w')
 
     for order in orders:
         
@@ -49,9 +47,9 @@ def top_down(orders , tanks):
                 feasible_tanks = [tank for tank in tanks if tank.beer == order.beer and tank.capacity > 0 \
                             and not any_is_intersected(tank.intervals, order.split, order.end, lazy=0) ]
                 best = tanks.index( min( feasible_tanks, key = lambda tank : tank.capacity ) )
-                #print([f.name for f in feasible_tanks] )
+                
             except ValueError:
-                #print("no feasible")
+                
                 try:
                     feasible_tanks = [tank for tank in tanks if tank.beer == None \
                             and not any_is_intersected(tank.intervals, order.split, tank.capacity*(order.end - order.split)//order.amount + order.split, tank.lazy) ]
@@ -68,9 +66,9 @@ def top_down(orders , tanks):
                 except ValueError:
                     raise Exception("There is no solution to the problem")
             
-            n_tanks.add(tanks[best])
             # Beer assigned to best tank
             tanks[best].beer = order.beer
+            n_tanks.add(tanks[best])
 
             # Calculating the max amount of beer to be assigned to the best tank. Also the split point (assuming constant flown)
             surplus_beer = min(tanks[best].capacity, order.amount)
@@ -82,23 +80,23 @@ def top_down(orders , tanks):
             file.write(str(order.beer)+","+str(tanks[best].name)+","+str(order.split)+","+str(split)+","+str(order.name)+"\n" )
 
             # Updating the schedule of tank and order
-            tanks[best].end = max(split, tanks[best].end)
+            tanks[best].end = split
             tanks[best].start = order.split
             tanks[best].update_intervals()
-            order.split = max(split, order.start)
+            order.split = split
 
             #print(order.start, order.split, order.end)
-            print(tanks[best].name, str(surplus_beer)+"/"+str(order.amount+surplus_beer), order.beer, str(tanks[best].start - tanks[best].lazy)+"~["+ str(tanks[best].start)+","+str(tanks[best].end)+"] order:(", order.start, order.split, order.end, ")")
+            print(tanks[best].name, str(surplus_beer)+"/"+str(order.amount+surplus_beer), order.beer, str(tanks[best].start - tanks[best].lazy)+"~["+ str(tanks[best].start)+","+str(tanks[best].end)+"]")
             
             # Re-inicializing parameters in case this tank is full
             if tanks[best].capacity == 0:
                 tanks[best].capacity = tanks[best].max_capacity
                 tanks[best].beer = None   
 
-    print("numero de tanques usados", len(n_tanks), "de", len(tanks) )
-    print("Estado inicial de los tanques:")
-    for tank in tanks:
-        print(tank.name, ":", tank.capacity, "de", tank.beer)
+    print("\nnumero de tanques usados", len(n_tanks), "de", len(tanks) )
+    #print("Estado inicial de los tanques:")
+    #for tank in tanks:
+    #    print(tank.name, ":", tank.capacity, "de", tank.beer)
     return    
 
 if __name__ == "__main__":
@@ -108,12 +106,15 @@ if __name__ == "__main__":
         n_queries, n_tanks = map(int, file.readline().split(' '))
         queries = []
         tanks = []
+
+        # Read orders
         for i in range(n_queries):
             query = file.readline().split(' ')
             query = (query[0], int(query[1]), int(query[2]) , int(query[3]))
             queries.append(query)
 
-        queries.sort( key = lambda query: (query[1], -query[2]), reverse=True )
+        # Divide-and-Conquer 
+        queries.sort( key = lambda query: (query[1], query[2]), reverse=True )
         beers = []
         orders = []
         mini = float("inf")
@@ -128,15 +129,10 @@ if __name__ == "__main__":
                     orders.append( Query(i, query[0], query[1] -mini , query[2] -mini, query[3]) )
                     i += 1
         
-        #    temp = [query for query in queries if query[0] == beer]
-        #    orders += list(sorted(temp, key =  lambda order: (order[1], -order[2])))
-        #mini = min(orders, key = lambda order: order.start).start
-        #orders = map(lambda query: Query(query.name, query.beer, query.start -mini , query.end -mini, query.amount), orders)
-        
+        # Read tanks
         for i in range(n_tanks):
             name, capacity = file.readline().split(' ')
             tank = Tank(name, int(capacity), 30)
             tanks.append(tank)
 
-    #print([(order.name, order.start, order.end) for order in orders])
     top_down(orders, tanks)
